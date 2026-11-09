@@ -33,6 +33,19 @@ namespace lvh::detail {
     constexpr int default_scroll_lines_per_detent = 5;  ///< Logical lines represented by one default wheel detent.
 
     /**
+     * @brief Ableton Together fork: marks every CGEvent this backend posts as synthetic via
+     * `kCGEventSourceUserData`, so a consumer-side global event monitor (HostApp's "soft
+     * takeover" — see SoftTakeoverMonitor.swift) can tell the Guest's injected mouse input
+     * apart from the Host's own physical mouse. Keyboard events don't need this: they're
+     * already created from a distinct `kCGEventSourceStatePrivate` source (see
+     * MacosInputState::keyboard_source), which real hardware keyboards never use. Mouse
+     * events, however, share `kCGEventSourceStateHIDSystemState` with real hardware input
+     * (required so the cursor moves correctly), so there's no state-ID-based way to tell
+     * them apart without this explicit per-event tag.
+     */
+    constexpr std::int64_t synthetic_input_user_data = 0x41544F47;  // "ATOG" (Ableton TOGether)
+
+    /**
      * @brief Mapping from portable Windows-style key code to macOS virtual key code.
      */
     struct KeyCodeMap {
@@ -604,6 +617,7 @@ namespace lvh::detail {
           return OperationStatus::failure(backend_failure, "create macOS keyboard event");
         }
 
+        CGEventSetIntegerValueField(keyboard_event, kCGEventSourceUserData, synthetic_input_user_data);
         CGEventPost(kCGSessionEventTap, keyboard_event);
         CFRelease(keyboard_event);
         return OperationStatus::success();
@@ -655,6 +669,8 @@ namespace lvh::detail {
         CGEventKeyboardSetUnicodeString(key_up, characters.size(), characters.data());
         CGEventSetFlags(key_down, state_->keyboard_flags);
         CGEventSetFlags(key_up, state_->keyboard_flags);
+        CGEventSetIntegerValueField(key_down, kCGEventSourceUserData, synthetic_input_user_data);
+        CGEventSetIntegerValueField(key_up, kCGEventSourceUserData, synthetic_input_user_data);
         CGEventPost(kCGSessionEventTap, key_down);
         CGEventPost(kCGSessionEventTap, key_up);
         CFRelease(key_down);
@@ -823,6 +839,7 @@ namespace lvh::detail {
           CGEventSetFlags(event, state_->keyboard_flags);
         }
 
+        CGEventSetIntegerValueField(event, kCGEventSourceUserData, synthetic_input_user_data);
         CGEventPost(kCGHIDEventTap, event);
         CGWarpMouseCursorPosition(location);
         return OperationStatus::success();
@@ -874,6 +891,7 @@ namespace lvh::detail {
         }
 
         CGEventSetIntegerValueField(event, kCGScrollWheelEventIsContinuous, 1);
+        CGEventSetIntegerValueField(event, kCGEventSourceUserData, synthetic_input_user_data);
         CGEventPost(kCGHIDEventTap, event);
         CFRelease(event);
         return OperationStatus::success();
