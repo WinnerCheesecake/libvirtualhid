@@ -33,7 +33,7 @@ namespace lvh::detail {
     constexpr int default_scroll_lines_per_detent = 5;  ///< Logical lines represented by one default wheel detent.
 
     /**
-     * @brief Ableton Together fork: marks every CGEvent this backend posts as synthetic via
+     * @brief dawswithfriends fork: marks every CGEvent this backend posts as synthetic via
      * `kCGEventSourceUserData`, so a consumer-side global event monitor (HostApp's "soft
      * takeover" — see SoftTakeoverMonitor.swift) can tell the Guest's injected mouse input
      * apart from the Host's own physical mouse. Keyboard events don't need this: they're
@@ -43,7 +43,7 @@ namespace lvh::detail {
      * (required so the cursor moves correctly), so there's no state-ID-based way to tell
      * them apart without this explicit per-event tag.
      */
-    constexpr std::int64_t synthetic_input_user_data = 0x41544F47;  // "ATOG" (Ableton TOGether)
+    constexpr std::int64_t synthetic_input_user_data = 0x41544F47;  // "ATOG" (dawswithfriends)
 
     /**
      * @brief Mapping from portable Windows-style key code to macOS virtual key code.
